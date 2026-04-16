@@ -11,6 +11,15 @@
     <section id="menu-screen" class="screen active">
       <h1>元素フラッシュカード</h1>
       <p>開示する項目を選んでコース開始。答えを見た後に自己採点します。</p>
+      <div class="range-settings">
+        <p class="range-title">出題範囲（元素番号）</p>
+        <div class="range-inputs">
+          <span>#</span>
+          <input id="range-min" type="number" min="1" max="118" value="1" />
+          <span>〜</span>
+          <input id="range-max" type="number" min="1" max="118" value="40" />
+        </div>
+      </div>
       <div class="menu-buttons">
         <button data-course="number">元素番号コース</button>
         <button data-course="english">元素名(英語)コース</button>

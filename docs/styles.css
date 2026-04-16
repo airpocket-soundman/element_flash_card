@@ -43,6 +43,29 @@ p {
   color: var(--sub);
 }
 
+.range-settings {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.range-title {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-inputs input {
+  width: 90px;
+}
+
 .menu-buttons,
 .actions {
   display: grid;

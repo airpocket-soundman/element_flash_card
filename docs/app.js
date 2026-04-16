@@ -9,9 +9,12 @@ const COURSES = {
 
 const STORAGE_KEY = "element_flash_card_history_v1";
 const HISTORY_LIMIT = 10000;
+const ELEMENT_MIN = 1;
+const ELEMENT_MAX = ELEMENTS.length;
 
 let currentCourse = null;
 let currentElement = null;
+let currentPool = ELEMENTS;
 let answerVisible = false;
 let history = loadHistory();
 
@@ -27,6 +30,8 @@ const markCorrectBtn = document.getElementById("mark-correct");
 const markWrongBtn = document.getElementById("mark-wrong");
 const windowSizeSelect = document.getElementById("window-size");
 const resultPanels = document.getElementById("result-panels");
+const rangeMinInput = document.getElementById("range-min");
+const rangeMaxInput = document.getElementById("range-max");
 
 const valueNodes = {
   number: document.getElementById("q-number"),
@@ -65,14 +70,23 @@ function showScreen(name) {
 }
 
 function startCourse(courseKey) {
+  const range = getSelectedRange();
+  if (!range) return;
+
+  currentPool = ELEMENTS.filter((e) => e.number >= range.min && e.number <= range.max);
+  if (currentPool.length === 0) {
+    alert("指定範囲に元素がありません。範囲を見直してください。");
+    return;
+  }
+
   currentCourse = courseKey;
-  quizTitle.textContent = COURSES[courseKey].label;
+  quizTitle.textContent = `${COURSES[courseKey].label}（${range.min}〜${range.max}）`;
   nextQuestion();
   showScreen("quiz");
 }
 
 function nextQuestion() {
-  currentElement = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)];
+  currentElement = currentPool[Math.floor(Math.random() * currentPool.length)];
   answerVisible = false;
   renderQuestion();
   showAnswerBtn.disabled = false;
@@ -205,4 +219,21 @@ function loadHistory() {
 
 function saveHistory() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+}
+
+function getSelectedRange() {
+  const min = Number.parseInt(rangeMinInput.value, 10);
+  const max = Number.parseInt(rangeMaxInput.value, 10);
+
+  if (!Number.isInteger(min) || !Number.isInteger(max)) {
+    alert("出題範囲は整数で入力してください。");
+    return null;
+  }
+
+  if (min < ELEMENT_MIN || max > ELEMENT_MAX || min > max) {
+    alert(`出題範囲は ${ELEMENT_MIN}〜${ELEMENT_MAX} で、開始<=終了にしてください。`);
+    return null;
+  }
+
+  return { min, max };
 }
