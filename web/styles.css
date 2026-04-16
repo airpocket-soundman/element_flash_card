@@ -1,0 +1,181 @@
+﻿:root {
+  --bg: #f2f5f9;
+  --panel: #ffffff;
+  --text: #17324a;
+  --sub: #4b657a;
+  --accent: #0d6bb8;
+  --accent-2: #08916f;
+  --danger: #c44536;
+  --line: #d8e3ee;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+  background: linear-gradient(140deg, #ecf3fb, #f7fbff);
+  color: var(--text);
+}
+
+.app {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 20px 14px 30px;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+h1, h2 {
+  margin: 0 0 10px;
+}
+
+p {
+  margin: 0 0 18px;
+  color: var(--sub);
+}
+
+.menu-buttons,
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+button,
+select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 15px;
+  background: var(--panel);
+}
+
+button {
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+button:hover:enabled {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+#show-answer {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#mark-correct {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+#mark-wrong {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.top-actions {
+  margin-bottom: 10px;
+}
+
+.back-menu {
+  width: fit-content;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 14px 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px dashed #e5edf5;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  color: var(--sub);
+  font-weight: 600;
+}
+
+.value {
+  font-weight: 700;
+}
+
+.hidden-answer {
+  letter-spacing: 0.15em;
+  color: #97aab9;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.result-panels {
+  display: grid;
+  gap: 12px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.panel h3 {
+  margin: 0 0 8px;
+}
+
+.panel p {
+  margin: 0 0 8px;
+}
+
+.panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.panel th,
+.panel td {
+  border-bottom: 1px solid #edf3f8;
+  text-align: left;
+  padding: 6px 4px;
+}
+
+.panel tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
