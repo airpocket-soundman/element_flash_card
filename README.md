@@ -20,23 +20,33 @@ GitHub Pages でそのまま公開できる静的サイト構成です。
 
 ## ファイル構成
 
-- `web/index.html`: 画面構成（メニュー / クイズ / リザルト）
-- `web/styles.css`: スタイル
-- `web/app.js`: 出題ロジック、履歴保存、リザルト集計
-- `web/elements.js`: 元素データ（番号 / 英語名 / 日本語名 / 記号）
+- `docs/index.html`: 画面構成（メニュー / クイズ / リザルト）
+- `docs/styles.css`: スタイル
+- `docs/app.js`: 出題ロジック、履歴保存、リザルト集計
+- `docs/elements.js`: 元素データ（番号 / 英語名 / 日本語名 / 記号）
+- `docs/manifest.webmanifest`: PWAマニフェスト
+- `docs/service-worker.js`: オフラインキャッシュ用Service Worker
 
 ## 使い方（ローカル）
 
 1. このリポジトリをダウンロードまたはクローン
-2. `web/index.html` をブラウザで開く
+2. `docs/index.html` をブラウザで開く
 3. メニューからコースを選択して開始
 4. `答えを見る` -> `正解` または `誤答` を押して学習
 5. `リザルトを見る` で弱点元素を確認
 
 ## GitHub Pages で配信する
 
-`web/` 配下をそのまま公開したい場合は、GitHub Actions で `web` ディレクトリを Pages にデプロイしてください。  
-`Deploy from a branch` の標準設定では `/ (root)` または `/docs` のみ指定できます。
+1. GitHub にこのリポジトリを push
+2. GitHub の `Settings` -> `Pages`
+3. `Build and deployment` の `Source` を `Deploy from a branch` に設定
+4. Branch を `main`、フォルダを `/docs` に設定して保存
+5. 数分後に公開 URL へアクセス
+
+## PWA
+
+- 対応ブラウザでは「ホーム画面に追加」や「インストール」が可能です。
+- `service-worker.js` により、初回アクセス後は主要ファイルがオフラインでも利用可能です。
 
 ## データ保存仕様
 

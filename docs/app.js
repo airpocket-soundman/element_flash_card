@@ -40,6 +40,7 @@ const valueNodes = {
   symbol: document.getElementById("q-symbol")
 };
 
+registerServiceWorker();
 setupEvents();
 showScreen("menu");
 
@@ -236,4 +237,14 @@ function getSelectedRange() {
   }
 
   return { min, max };
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {
+      // no-op
+    });
+  });
 }
