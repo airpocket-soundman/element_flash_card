@@ -516,6 +516,11 @@ function clamp(v, lo, hi) {
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
 
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (hadController) window.location.reload();
+  });
+
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {
       // no-op
