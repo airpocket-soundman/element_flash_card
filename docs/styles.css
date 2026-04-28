@@ -56,14 +56,161 @@ p {
   font-weight: 600;
 }
 
-.range-inputs {
+.range-dials {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
 }
 
-.range-inputs input {
-  width: 90px;
+.dial-block {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.dial-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sub);
+  letter-spacing: 0.05em;
+}
+
+.dial {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.dial-step {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 56px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--accent);
+  user-select: none;
+}
+
+.dial-track {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 56px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #e9f1fa 0%, #ffffff 50%, #e9f1fa 100%);
+  overflow: hidden;
+  touch-action: pan-x;
+}
+
+.dial-track::before,
+.dial-track::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dial-track::before {
+  left: 0;
+  background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0));
+}
+
+.dial-track::after {
+  right: 0;
+  background: linear-gradient(to left, #ffffff, rgba(255, 255, 255, 0));
+}
+
+.dial-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.dial-list::-webkit-scrollbar {
+  display: none;
+}
+
+.dial-list li {
+  flex: 0 0 44px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 15px;
+  color: #94a8ba;
+  cursor: pointer;
+  transition: color 0.15s, font-size 0.15s, font-weight 0.15s;
+}
+
+.dial-list li.dial-spacer {
+  cursor: default;
+  pointer-events: none;
+}
+
+.dial-list li.active {
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.dial-cursor {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 50%;
+  width: 44px;
+  transform: translateX(-50%);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(13, 107, 184, 0.08);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dial-sep {
+  align-self: center;
+  margin-top: 18px;
+  font-weight: 700;
+  color: var(--sub);
+}
+
+.range-summary {
+  margin: 12px 0 0;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.range-summary span {
+  color: var(--accent);
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .menu-buttons,
@@ -200,5 +347,126 @@ button:disabled {
 @media (max-width: 640px) {
   .row {
     grid-template-columns: 1fr;
+  }
+}
+
+.input-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input-display {
+  height: 64px;
+  border-radius: 12px;
+  border: 2px solid var(--accent);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.input-display:empty::before {
+  content: attr(data-placeholder);
+  color: #b6c5d3;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+.input-pad {
+  display: grid;
+  gap: 6px;
+}
+
+.alpha-pad {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.num-pad {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.input-pad button {
+  height: 48px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.input-pad button:active:enabled {
+  background: #e2ecf6;
+  transform: translateY(1px);
+}
+
+.input-controls {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 6px;
+}
+
+.input-controls button {
+  height: 48px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#input-back {
+  font-size: 22px;
+  color: var(--sub);
+}
+
+#input-submit {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#input-next {
+  grid-column: 1 / -1;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.judge-result {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.judge-result.correct {
+  background: #d8f1e3;
+  color: var(--accent-2);
+  border: 1px solid #a4d9bf;
+}
+
+.judge-result.wrong {
+  background: #fcdedc;
+  color: var(--danger);
+  border: 1px solid #efb6b1;
+}
+
+@media (max-width: 380px) {
+  .alpha-pad {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .input-pad button {
+    font-size: 16px;
+    height: 44px;
   }
 }

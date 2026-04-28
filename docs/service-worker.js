@@ -1,4 +1,4 @@
-const CACHE_NAME = "element-flash-card-v1";
+const CACHE_NAME = "element-flash-card-v3";
 const APP_SHELL = [
   "./",
   "./index.html",

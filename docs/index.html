@@ -16,18 +16,40 @@
       <p>開示する項目を選んでコース開始。答えを見た後に自己採点します。</p>
       <div class="range-settings">
         <p class="range-title">出題範囲（元素番号）</p>
-        <div class="range-inputs">
-          <span>#</span>
-          <input id="range-min" type="number" min="1" max="118" value="1" />
-          <span>〜</span>
-          <input id="range-max" type="number" min="1" max="118" value="40" />
+        <div class="range-dials">
+          <div class="dial-block">
+            <span class="dial-label">開始</span>
+            <div class="dial">
+              <button type="button" class="dial-step" data-target="min" data-step="-1" aria-label="開始を1減らす">−</button>
+              <div class="dial-track" id="dial-min">
+                <ul class="dial-list"></ul>
+                <div class="dial-cursor" aria-hidden="true"></div>
+              </div>
+              <button type="button" class="dial-step" data-target="min" data-step="1" aria-label="開始を1増やす">＋</button>
+            </div>
+          </div>
+          <span class="dial-sep">〜</span>
+          <div class="dial-block">
+            <span class="dial-label">終了</span>
+            <div class="dial">
+              <button type="button" class="dial-step" data-target="max" data-step="-1" aria-label="終了を1減らす">−</button>
+              <div class="dial-track" id="dial-max">
+                <ul class="dial-list"></ul>
+                <div class="dial-cursor" aria-hidden="true"></div>
+              </div>
+              <button type="button" class="dial-step" data-target="max" data-step="1" aria-label="終了を1増やす">＋</button>
+            </div>
+          </div>
         </div>
+        <p class="range-summary"><span id="range-summary">1〜40</span> 番を出題</p>
       </div>
       <div class="menu-buttons">
         <button data-course="number">元素番号コース</button>
         <button data-course="english">元素名(英語)コース</button>
         <button data-course="japanese">元素名(日本語)コース</button>
         <button data-course="symbol">元素記号コース</button>
+        <button data-course="symbolInput">入力モード：番号 → 記号</button>
+        <button data-course="numberInput">入力モード：記号 → 番号</button>
         <button id="go-results">リザルトを見る</button>
       </div>
     </section>
@@ -43,10 +65,21 @@
         <div class="row"><span class="label">元素名(日本語)</span><span id="q-japanese" class="value"></span></div>
         <div class="row"><span class="label">元素記号</span><span id="q-symbol" class="value"></span></div>
       </div>
-      <div class="actions">
+      <div class="actions" id="default-actions">
         <button id="show-answer">答えを見る</button>
         <button id="mark-correct" disabled>正解</button>
         <button id="mark-wrong" disabled>誤答</button>
+      </div>
+      <div class="input-actions" id="input-actions" hidden>
+        <div id="input-display" class="input-display" data-placeholder="ここに入力"></div>
+        <div id="alpha-pad" class="input-pad alpha-pad" hidden></div>
+        <div id="num-pad" class="input-pad num-pad" hidden></div>
+        <div class="input-controls">
+          <button id="input-back" type="button" aria-label="1文字削除">⌫</button>
+          <button id="input-submit" type="button">答え合わせ</button>
+          <button id="input-next" type="button" hidden>次の問題</button>
+        </div>
+        <p id="judge-result" class="judge-result" hidden></p>
       </div>
     </section>
 

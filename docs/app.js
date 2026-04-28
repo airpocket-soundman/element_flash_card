@@ -4,7 +4,9 @@ const COURSES = {
   number: { label: "元素番号コース", reveal: "number" },
   english: { label: "元素名(英語)コース", reveal: "english" },
   japanese: { label: "元素名(日本語)コース", reveal: "japanese" },
-  symbol: { label: "元素記号コース", reveal: "symbol" }
+  symbol: { label: "元素記号コース", reveal: "symbol" },
+  symbolInput: { label: "入力モード（番号→記号）", reveal: "number", input: "alpha", answerKey: "symbol" },
+  numberInput: { label: "入力モード（記号→番号）", reveal: "symbol", input: "num", answerKey: "number" }
 };
 
 const STORAGE_KEY = "element_flash_card_history_v1";
@@ -30,8 +32,20 @@ const markCorrectBtn = document.getElementById("mark-correct");
 const markWrongBtn = document.getElementById("mark-wrong");
 const windowSizeSelect = document.getElementById("window-size");
 const resultPanels = document.getElementById("result-panels");
-const rangeMinInput = document.getElementById("range-min");
-const rangeMaxInput = document.getElementById("range-max");
+const rangeSummary = document.getElementById("range-summary");
+const rangeDials = setupRangeDials();
+
+const defaultActions = document.getElementById("default-actions");
+const inputActions = document.getElementById("input-actions");
+const inputDisplay = document.getElementById("input-display");
+const alphaPad = document.getElementById("alpha-pad");
+const numPad = document.getElementById("num-pad");
+const inputBackBtn = document.getElementById("input-back");
+const inputSubmitBtn = document.getElementById("input-submit");
+const inputNextBtn = document.getElementById("input-next");
+const judgeResult = document.getElementById("judge-result");
+
+let inputBuffer = "";
 
 const valueNodes = {
   number: document.getElementById("q-number"),
@@ -39,6 +53,8 @@ const valueNodes = {
   japanese: document.getElementById("q-japanese"),
   symbol: document.getElementById("q-symbol")
 };
+
+buildInputPads();
 
 registerServiceWorker();
 setupEvents();
@@ -62,6 +78,12 @@ function setupEvents() {
   markCorrectBtn.addEventListener("click", () => submitAnswer(true));
   markWrongBtn.addEventListener("click", () => submitAnswer(false));
   windowSizeSelect.addEventListener("change", renderResults);
+
+  inputBackBtn.addEventListener("click", popInputChar);
+  inputSubmitBtn.addEventListener("click", submitInputAnswer);
+  inputNextBtn.addEventListener("click", nextQuestion);
+
+  document.addEventListener("keydown", handleGlobalKeydown);
 }
 
 function showScreen(name) {
@@ -82,6 +104,16 @@ function startCourse(courseKey) {
 
   currentCourse = courseKey;
   quizTitle.textContent = `${COURSES[courseKey].label}（${range.min}〜${range.max}）`;
+
+  const course = COURSES[courseKey];
+  const isInput = !!course.input;
+  defaultActions.hidden = isInput;
+  inputActions.hidden = !isInput;
+  if (isInput) {
+    alphaPad.hidden = course.input !== "alpha";
+    numPad.hidden = course.input !== "num";
+  }
+
   nextQuestion();
   showScreen("quiz");
 }
@@ -90,9 +122,15 @@ function nextQuestion() {
   currentElement = currentPool[Math.floor(Math.random() * currentPool.length)];
   answerVisible = false;
   renderQuestion();
-  showAnswerBtn.disabled = false;
-  markCorrectBtn.disabled = true;
-  markWrongBtn.disabled = true;
+
+  const course = COURSES[currentCourse];
+  if (course.input) {
+    resetInputState();
+  } else {
+    showAnswerBtn.disabled = false;
+    markCorrectBtn.disabled = true;
+    markWrongBtn.disabled = true;
+  }
 }
 
 function renderQuestion() {
@@ -118,6 +156,11 @@ function revealAnswer() {
 }
 
 function submitAnswer(isCorrect) {
+  recordResult(isCorrect);
+  nextQuestion();
+}
+
+function recordResult(isCorrect) {
   const courseHistory = history[currentCourse];
   courseHistory.push({
     elementNumber: currentElement.number,
@@ -128,7 +171,136 @@ function submitAnswer(isCorrect) {
     history[currentCourse] = courseHistory.slice(-HISTORY_LIMIT);
   }
   saveHistory();
-  nextQuestion();
+}
+
+function buildInputPads() {
+  for (let code = 65; code <= 90; code++) {
+    const ch = String.fromCharCode(code);
+    alphaPad.appendChild(makePadButton(ch, () => appendInputChar(ch)));
+  }
+
+  for (let d = 1; d <= 9; d++) {
+    numPad.appendChild(makePadButton(String(d), () => appendInputChar(String(d))));
+  }
+  const blankL = document.createElement("div");
+  numPad.appendChild(blankL);
+  numPad.appendChild(makePadButton("0", () => appendInputChar("0")));
+  const blankR = document.createElement("div");
+  numPad.appendChild(blankR);
+}
+
+function makePadButton(label, handler) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = label;
+  btn.addEventListener("click", handler);
+  return btn;
+}
+
+function resetInputState() {
+  inputBuffer = "";
+  renderInputDisplay();
+  judgeResult.hidden = true;
+  judgeResult.classList.remove("correct", "wrong");
+  inputBackBtn.hidden = false;
+  inputBackBtn.disabled = false;
+  inputSubmitBtn.hidden = false;
+  inputNextBtn.hidden = true;
+  setPadDisabled(false);
+}
+
+function appendInputChar(ch) {
+  if (inputNextBtn.hidden === false) return;
+  const course = COURSES[currentCourse];
+  if (!course || !course.input) return;
+  const limit = course.input === "alpha" ? 3 : 3;
+  if (inputBuffer.length >= limit) return;
+  inputBuffer += ch;
+  renderInputDisplay();
+}
+
+function popInputChar() {
+  if (inputNextBtn.hidden === false) return;
+  if (inputBuffer.length === 0) return;
+  inputBuffer = inputBuffer.slice(0, -1);
+  renderInputDisplay();
+}
+
+function renderInputDisplay() {
+  const course = COURSES[currentCourse];
+  if (course && course.input === "alpha") {
+    inputDisplay.textContent = formatSymbol(inputBuffer);
+  } else {
+    inputDisplay.textContent = inputBuffer;
+  }
+}
+
+function formatSymbol(s) {
+  if (!s) return "";
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+function submitInputAnswer() {
+  if (!inputBuffer) return;
+  const course = COURSES[currentCourse];
+  if (!course || !course.input) return;
+
+  const correct = String(currentElement[course.answerKey]);
+  const userAnswer = course.input === "alpha" ? formatSymbol(inputBuffer) : inputBuffer;
+  const isCorrect =
+    course.input === "alpha"
+      ? userAnswer.toLowerCase() === correct.toLowerCase()
+      : Number(userAnswer) === Number(correct);
+
+  recordResult(isCorrect);
+
+  answerVisible = true;
+  renderQuestion();
+
+  judgeResult.hidden = false;
+  judgeResult.classList.toggle("correct", isCorrect);
+  judgeResult.classList.toggle("wrong", !isCorrect);
+  judgeResult.textContent = isCorrect
+    ? `正解！  ${correct}`
+    : `不正解  あなた: ${userAnswer}  /  正解: ${correct}`;
+
+  setPadDisabled(true);
+  inputBackBtn.hidden = true;
+  inputSubmitBtn.hidden = true;
+  inputNextBtn.hidden = false;
+}
+
+function setPadDisabled(disabled) {
+  alphaPad.querySelectorAll("button").forEach((b) => (b.disabled = disabled));
+  numPad.querySelectorAll("button").forEach((b) => (b.disabled = disabled));
+}
+
+function handleGlobalKeydown(e) {
+  if (!screens.quiz.classList.contains("active")) return;
+  const course = currentCourse ? COURSES[currentCourse] : null;
+  if (!course || !course.input) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (inputNextBtn.hidden === false) nextQuestion();
+    else submitInputAnswer();
+    return;
+  }
+  if (e.key === "Backspace") {
+    e.preventDefault();
+    popInputChar();
+    return;
+  }
+  if (course.input === "alpha" && /^[a-zA-Z]$/.test(e.key)) {
+    e.preventDefault();
+    appendInputChar(e.key.toUpperCase());
+    return;
+  }
+  if (course.input === "num" && /^[0-9]$/.test(e.key)) {
+    e.preventDefault();
+    appendInputChar(e.key);
+  }
 }
 
 function renderResults() {
@@ -202,20 +374,21 @@ function renderResults() {
 }
 
 function loadHistory() {
-  const empty = { number: [], english: [], japanese: [], symbol: [] };
+  const result = {};
+  Object.keys(COURSES).forEach((key) => {
+    result[key] = [];
+  });
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return empty;
+    if (!raw) return result;
     const parsed = JSON.parse(raw);
-    return {
-      number: Array.isArray(parsed.number) ? parsed.number : [],
-      english: Array.isArray(parsed.english) ? parsed.english : [],
-      japanese: Array.isArray(parsed.japanese) ? parsed.japanese : [],
-      symbol: Array.isArray(parsed.symbol) ? parsed.symbol : []
-    };
+    Object.keys(result).forEach((key) => {
+      if (Array.isArray(parsed[key])) result[key] = parsed[key];
+    });
   } catch (_err) {
-    return empty;
+    /* ignore */
   }
+  return result;
 }
 
 function saveHistory() {
@@ -223,20 +396,150 @@ function saveHistory() {
 }
 
 function getSelectedRange() {
-  const min = Number.parseInt(rangeMinInput.value, 10);
-  const max = Number.parseInt(rangeMaxInput.value, 10);
-
-  if (!Number.isInteger(min) || !Number.isInteger(max)) {
-    alert("出題範囲は整数で入力してください。");
-    return null;
-  }
-
-  if (min < ELEMENT_MIN || max > ELEMENT_MAX || min > max) {
-    alert(`出題範囲は ${ELEMENT_MIN}〜${ELEMENT_MAX} で、開始<=終了にしてください。`);
-    return null;
-  }
-
+  const min = rangeDials.minDial.getValue();
+  const max = rangeDials.maxDial.getValue();
   return { min, max };
+}
+
+function setupRangeDials() {
+  const minDial = createDial(document.getElementById("dial-min"), {
+    min: ELEMENT_MIN,
+    max: ELEMENT_MAX,
+    value: 1
+  });
+  const maxDial = createDial(document.getElementById("dial-max"), {
+    min: ELEMENT_MIN,
+    max: ELEMENT_MAX,
+    value: Math.min(40, ELEMENT_MAX)
+  });
+
+  document.querySelectorAll(".dial-step").forEach((btn) => {
+    const target = btn.dataset.target === "min" ? minDial : maxDial;
+    const step = Number(btn.dataset.step);
+    btn.addEventListener("click", () => {
+      target.setValue(target.getValue() + step);
+    });
+  });
+
+  function updateSummary() {
+    rangeSummary.textContent = `${minDial.getValue()}〜${maxDial.getValue()}`;
+  }
+
+  minDial.onChange = updateSummary;
+  maxDial.onChange = updateSummary;
+
+  minDial.onSettle = (v) => {
+    if (v > maxDial.getValue()) maxDial.setValue(v);
+  };
+  maxDial.onSettle = (v) => {
+    if (v < minDial.getValue()) minDial.setValue(v);
+  };
+
+  updateSummary();
+  return { minDial, maxDial };
+}
+
+function createDial(host, { min, max, value }) {
+  const ITEM_WIDTH = 44;
+  const list = host.querySelector(".dial-list");
+
+  const startSpacer = document.createElement("li");
+  startSpacer.className = "dial-spacer";
+  list.appendChild(startSpacer);
+
+  const items = [];
+  for (let i = min; i <= max; i++) {
+    const li = document.createElement("li");
+    li.textContent = i;
+    li.dataset.value = String(i);
+    list.appendChild(li);
+    items.push(li);
+  }
+
+  const endSpacer = document.createElement("li");
+  endSpacer.className = "dial-spacer";
+  list.appendChild(endSpacer);
+
+  function updateSpacers() {
+    const trackWidth = list.clientWidth;
+    const spacer = Math.max(0, (trackWidth - ITEM_WIDTH) / 2);
+    startSpacer.style.flex = `0 0 ${spacer}px`;
+    endSpacer.style.flex = `0 0 ${spacer}px`;
+  }
+
+  let currentValue = clamp(value, min, max);
+
+  const api = {
+    onChange: null,
+    onSettle: null,
+    getValue: () => currentValue,
+    setValue: (v) => {
+      const next = clamp(Math.round(v), min, max);
+      const idx = next - min;
+      list.scrollTo({ left: idx * ITEM_WIDTH, behavior: "smooth" });
+    }
+  };
+
+  function setActive(v) {
+    if (v === currentValue) return;
+    currentValue = v;
+    items.forEach((li) => {
+      li.classList.toggle("active", Number(li.dataset.value) === v);
+    });
+    if (api.onChange) api.onChange(v);
+  }
+
+  let settleTimer = null;
+  function syncFromScroll() {
+    const idx = Math.round(list.scrollLeft / ITEM_WIDTH);
+    const v = clamp(min + idx, min, max);
+    setActive(v);
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      if (api.onSettle) api.onSettle(currentValue);
+    }, 120);
+  }
+
+  list.addEventListener("scroll", syncFromScroll, { passive: true });
+
+  items.forEach((li) => {
+    li.addEventListener("click", () => {
+      api.setValue(Number(li.dataset.value));
+    });
+  });
+
+  host.tabIndex = 0;
+  host.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      api.setValue(currentValue - 1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      api.setValue(currentValue + 1);
+    }
+  });
+
+  function initialize() {
+    updateSpacers();
+    const idx = currentValue - min;
+    list.scrollLeft = idx * ITEM_WIDTH;
+    items.forEach((li) => {
+      li.classList.toggle("active", Number(li.dataset.value) === currentValue);
+    });
+  }
+
+  requestAnimationFrame(initialize);
+  window.addEventListener("resize", () => {
+    updateSpacers();
+    const idx = currentValue - min;
+    list.scrollLeft = idx * ITEM_WIDTH;
+  });
+
+  return api;
+}
+
+function clamp(v, lo, hi) {
+  return Math.max(lo, Math.min(hi, v));
 }
 
 function registerServiceWorker() {
