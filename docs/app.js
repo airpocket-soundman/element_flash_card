@@ -40,9 +40,8 @@ const defaultActions = document.getElementById("default-actions");
 const inputActions = document.getElementById("input-actions");
 const answerInput = document.getElementById("answer-input");
 const inputSubmitBtn = document.getElementById("input-submit");
+const inputNextBtn = document.getElementById("input-next");
 const judgeResult = document.getElementById("judge-result");
-
-let autoAdvanceTimer = null;
 
 const valueNodes = {
   number: document.getElementById("q-number"),
@@ -75,34 +74,18 @@ function setupEvents() {
   windowSizeSelect.addEventListener("change", renderResults);
 
   inputSubmitBtn.addEventListener("click", submitInputAnswer);
+  inputNextBtn.addEventListener("click", nextQuestion);
 
   answerInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (autoAdvanceTimer) {
-        clearTimeout(autoAdvanceTimer);
-        autoAdvanceTimer = null;
-        nextQuestion();
-      } else {
-        submitInputAnswer();
-      }
-    }
-  });
-
-  judgeResult.addEventListener("click", () => {
-    if (autoAdvanceTimer) {
-      clearTimeout(autoAdvanceTimer);
-      autoAdvanceTimer = null;
-      nextQuestion();
+      if (!inputNextBtn.hidden) nextQuestion();
+      else submitInputAnswer();
     }
   });
 }
 
 function showScreen(name) {
-  if (name !== "quiz" && autoAdvanceTimer) {
-    clearTimeout(autoAdvanceTimer);
-    autoAdvanceTimer = null;
-  }
   Object.keys(screens).forEach((key) => {
     screens[key].classList.toggle("active", key === name);
   });
@@ -212,21 +195,18 @@ function recordResult(isCorrect) {
 }
 
 function resetInputState() {
-  if (autoAdvanceTimer) {
-    clearTimeout(autoAdvanceTimer);
-    autoAdvanceTimer = null;
-  }
   answerInput.value = "";
   answerInput.readOnly = false;
   answerInput.disabled = false;
+  inputSubmitBtn.hidden = false;
   inputSubmitBtn.disabled = false;
+  inputNextBtn.hidden = true;
   judgeResult.hidden = true;
   judgeResult.classList.remove("correct", "wrong");
   answerInput.focus();
 }
 
 function submitInputAnswer() {
-  if (autoAdvanceTimer) return;
   const raw = answerInput.value.trim();
   if (!raw) return;
   const course = COURSES[currentCourse];
@@ -251,13 +231,9 @@ function submitInputAnswer() {
     : `不正解  あなた: ${raw}  /  正解: ${correct}`;
 
   answerInput.readOnly = true;
-  inputSubmitBtn.disabled = true;
-
-  const delay = isCorrect ? 700 : 2200;
-  autoAdvanceTimer = setTimeout(() => {
-    autoAdvanceTimer = null;
-    nextQuestion();
-  }, delay);
+  inputSubmitBtn.hidden = true;
+  inputNextBtn.hidden = false;
+  inputNextBtn.focus();
 }
 
 function renderResults() {
