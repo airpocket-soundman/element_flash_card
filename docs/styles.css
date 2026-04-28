@@ -356,86 +356,53 @@ button:disabled {
   gap: 10px;
 }
 
-.input-display {
+.answer-input {
   height: 64px;
+  width: 100%;
   border-radius: 12px;
   border: 2px solid var(--accent);
   background: var(--panel);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
   font-size: 32px;
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  outline: none;
+  padding: 0 12px;
 }
 
-.input-display:empty::before {
-  content: attr(data-placeholder);
+.answer-input:focus {
+  box-shadow: 0 0 0 3px rgba(13, 107, 184, 0.2);
+}
+
+.answer-input::placeholder {
   color: #b6c5d3;
   font-size: 15px;
   font-weight: 500;
   letter-spacing: normal;
 }
 
-.input-pad {
-  display: grid;
-  gap: 6px;
-}
-
-.alpha-pad {
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.num-pad {
-  grid-template-columns: repeat(3, 1fr);
-  max-width: 320px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.input-pad button {
-  height: 48px;
-  padding: 0;
-  font-size: 18px;
-  font-weight: 700;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.input-pad button:active:enabled {
-  background: #e2ecf6;
-  transform: translateY(1px);
+.answer-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .input-controls {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr;
   gap: 6px;
 }
 
 .input-controls button {
-  height: 48px;
+  height: 52px;
   font-size: 16px;
   font-weight: 700;
 }
 
-#input-back {
-  font-size: 22px;
-  color: var(--sub);
-}
-
-#input-submit {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
+#input-submit,
 #input-next {
-  grid-column: 1 / -1;
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -459,14 +426,4 @@ button:disabled {
   background: #fcdedc;
   color: var(--danger);
   border: 1px solid #efb6b1;
-}
-
-@media (max-width: 380px) {
-  .alpha-pad {
-    grid-template-columns: repeat(6, 1fr);
-  }
-  .input-pad button {
-    font-size: 16px;
-    height: 44px;
-  }
 }

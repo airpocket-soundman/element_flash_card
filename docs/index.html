@@ -71,11 +71,16 @@
         <button id="mark-wrong" disabled>誤答</button>
       </div>
       <div class="input-actions" id="input-actions" hidden>
-        <div id="input-display" class="input-display" data-placeholder="ここに入力"></div>
-        <div id="alpha-pad" class="input-pad alpha-pad" hidden></div>
-        <div id="num-pad" class="input-pad num-pad" hidden></div>
+        <input
+          id="answer-input"
+          class="answer-input"
+          type="text"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          maxlength="3"
+        />
         <div class="input-controls">
-          <button id="input-back" type="button" aria-label="1文字削除">⌫</button>
           <button id="input-submit" type="button">答え合わせ</button>
           <button id="input-next" type="button" hidden>次の問題</button>
         </div>

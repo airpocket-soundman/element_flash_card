@@ -10,6 +10,7 @@ const COURSES = {
 };
 
 const STORAGE_KEY = "element_flash_card_history_v1";
+const RANGE_KEY = "element_flash_card_range_v1";
 const HISTORY_LIMIT = 10000;
 const ELEMENT_MIN = 1;
 const ELEMENT_MAX = ELEMENTS.length;
@@ -37,15 +38,10 @@ const rangeDials = setupRangeDials();
 
 const defaultActions = document.getElementById("default-actions");
 const inputActions = document.getElementById("input-actions");
-const inputDisplay = document.getElementById("input-display");
-const alphaPad = document.getElementById("alpha-pad");
-const numPad = document.getElementById("num-pad");
-const inputBackBtn = document.getElementById("input-back");
+const answerInput = document.getElementById("answer-input");
 const inputSubmitBtn = document.getElementById("input-submit");
 const inputNextBtn = document.getElementById("input-next");
 const judgeResult = document.getElementById("judge-result");
-
-let inputBuffer = "";
 
 const valueNodes = {
   number: document.getElementById("q-number"),
@@ -53,8 +49,6 @@ const valueNodes = {
   japanese: document.getElementById("q-japanese"),
   symbol: document.getElementById("q-symbol")
 };
-
-buildInputPads();
 
 registerServiceWorker();
 setupEvents();
@@ -79,11 +73,16 @@ function setupEvents() {
   markWrongBtn.addEventListener("click", () => submitAnswer(false));
   windowSizeSelect.addEventListener("change", renderResults);
 
-  inputBackBtn.addEventListener("click", popInputChar);
   inputSubmitBtn.addEventListener("click", submitInputAnswer);
   inputNextBtn.addEventListener("click", nextQuestion);
 
-  document.addEventListener("keydown", handleGlobalKeydown);
+  answerInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!inputNextBtn.hidden) nextQuestion();
+      else submitInputAnswer();
+    }
+  });
 }
 
 function showScreen(name) {
@@ -109,13 +108,24 @@ function startCourse(courseKey) {
   const isInput = !!course.input;
   defaultActions.hidden = isInput;
   inputActions.hidden = !isInput;
-  if (isInput) {
-    alphaPad.hidden = course.input !== "alpha";
-    numPad.hidden = course.input !== "num";
-  }
+  if (isInput) configureAnswerInput(course);
 
   nextQuestion();
   showScreen("quiz");
+}
+
+function configureAnswerInput(course) {
+  if (course.input === "alpha") {
+    answerInput.setAttribute("inputmode", "text");
+    answerInput.setAttribute("autocapitalize", "characters");
+    answerInput.setAttribute("placeholder", "元素記号を入力 (例: Fe)");
+    answerInput.removeAttribute("pattern");
+  } else {
+    answerInput.setAttribute("inputmode", "numeric");
+    answerInput.setAttribute("autocapitalize", "off");
+    answerInput.setAttribute("pattern", "[0-9]*");
+    answerInput.setAttribute("placeholder", "元素番号を入力 (例: 26)");
+  }
 }
 
 function nextQuestion() {
@@ -173,84 +183,27 @@ function recordResult(isCorrect) {
   saveHistory();
 }
 
-function buildInputPads() {
-  for (let code = 65; code <= 90; code++) {
-    const ch = String.fromCharCode(code);
-    alphaPad.appendChild(makePadButton(ch, () => appendInputChar(ch)));
-  }
-
-  for (let d = 1; d <= 9; d++) {
-    numPad.appendChild(makePadButton(String(d), () => appendInputChar(String(d))));
-  }
-  const blankL = document.createElement("div");
-  numPad.appendChild(blankL);
-  numPad.appendChild(makePadButton("0", () => appendInputChar("0")));
-  const blankR = document.createElement("div");
-  numPad.appendChild(blankR);
-}
-
-function makePadButton(label, handler) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.textContent = label;
-  btn.addEventListener("click", handler);
-  return btn;
-}
-
 function resetInputState() {
-  inputBuffer = "";
-  renderInputDisplay();
+  answerInput.value = "";
+  answerInput.disabled = false;
   judgeResult.hidden = true;
   judgeResult.classList.remove("correct", "wrong");
-  inputBackBtn.hidden = false;
-  inputBackBtn.disabled = false;
   inputSubmitBtn.hidden = false;
   inputNextBtn.hidden = true;
-  setPadDisabled(false);
-}
-
-function appendInputChar(ch) {
-  if (inputNextBtn.hidden === false) return;
-  const course = COURSES[currentCourse];
-  if (!course || !course.input) return;
-  const limit = course.input === "alpha" ? 3 : 3;
-  if (inputBuffer.length >= limit) return;
-  inputBuffer += ch;
-  renderInputDisplay();
-}
-
-function popInputChar() {
-  if (inputNextBtn.hidden === false) return;
-  if (inputBuffer.length === 0) return;
-  inputBuffer = inputBuffer.slice(0, -1);
-  renderInputDisplay();
-}
-
-function renderInputDisplay() {
-  const course = COURSES[currentCourse];
-  if (course && course.input === "alpha") {
-    inputDisplay.textContent = formatSymbol(inputBuffer);
-  } else {
-    inputDisplay.textContent = inputBuffer;
-  }
-}
-
-function formatSymbol(s) {
-  if (!s) return "";
-  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  answerInput.focus();
 }
 
 function submitInputAnswer() {
-  if (!inputBuffer) return;
+  const raw = answerInput.value.trim();
+  if (!raw) return;
   const course = COURSES[currentCourse];
   if (!course || !course.input) return;
 
   const correct = String(currentElement[course.answerKey]);
-  const userAnswer = course.input === "alpha" ? formatSymbol(inputBuffer) : inputBuffer;
   const isCorrect =
     course.input === "alpha"
-      ? userAnswer.toLowerCase() === correct.toLowerCase()
-      : Number(userAnswer) === Number(correct);
+      ? raw.toLowerCase() === correct.toLowerCase()
+      : Number(raw) === Number(correct);
 
   recordResult(isCorrect);
 
@@ -262,45 +215,12 @@ function submitInputAnswer() {
   judgeResult.classList.toggle("wrong", !isCorrect);
   judgeResult.textContent = isCorrect
     ? `正解！  ${correct}`
-    : `不正解  あなた: ${userAnswer}  /  正解: ${correct}`;
+    : `不正解  あなた: ${raw}  /  正解: ${correct}`;
 
-  setPadDisabled(true);
-  inputBackBtn.hidden = true;
+  answerInput.disabled = true;
   inputSubmitBtn.hidden = true;
   inputNextBtn.hidden = false;
-}
-
-function setPadDisabled(disabled) {
-  alphaPad.querySelectorAll("button").forEach((b) => (b.disabled = disabled));
-  numPad.querySelectorAll("button").forEach((b) => (b.disabled = disabled));
-}
-
-function handleGlobalKeydown(e) {
-  if (!screens.quiz.classList.contains("active")) return;
-  const course = currentCourse ? COURSES[currentCourse] : null;
-  if (!course || !course.input) return;
-  if (e.ctrlKey || e.metaKey || e.altKey) return;
-
-  if (e.key === "Enter") {
-    e.preventDefault();
-    if (inputNextBtn.hidden === false) nextQuestion();
-    else submitInputAnswer();
-    return;
-  }
-  if (e.key === "Backspace") {
-    e.preventDefault();
-    popInputChar();
-    return;
-  }
-  if (course.input === "alpha" && /^[a-zA-Z]$/.test(e.key)) {
-    e.preventDefault();
-    appendInputChar(e.key.toUpperCase());
-    return;
-  }
-  if (course.input === "num" && /^[0-9]$/.test(e.key)) {
-    e.preventDefault();
-    appendInputChar(e.key);
-  }
+  inputNextBtn.focus();
 }
 
 function renderResults() {
@@ -402,15 +322,16 @@ function getSelectedRange() {
 }
 
 function setupRangeDials() {
+  const saved = loadRange();
   const minDial = createDial(document.getElementById("dial-min"), {
     min: ELEMENT_MIN,
     max: ELEMENT_MAX,
-    value: 1
+    value: saved.min
   });
   const maxDial = createDial(document.getElementById("dial-max"), {
     min: ELEMENT_MIN,
     max: ELEMENT_MAX,
-    value: Math.min(40, ELEMENT_MAX)
+    value: saved.max
   });
 
   document.querySelectorAll(".dial-step").forEach((btn) => {
@@ -425,18 +346,55 @@ function setupRangeDials() {
     rangeSummary.textContent = `${minDial.getValue()}〜${maxDial.getValue()}`;
   }
 
+  function persist() {
+    saveRange(minDial.getValue(), maxDial.getValue());
+  }
+
   minDial.onChange = updateSummary;
   maxDial.onChange = updateSummary;
 
   minDial.onSettle = (v) => {
     if (v > maxDial.getValue()) maxDial.setValue(v);
+    persist();
   };
   maxDial.onSettle = (v) => {
     if (v < minDial.getValue()) minDial.setValue(v);
+    persist();
   };
 
   updateSummary();
   return { minDial, maxDial };
+}
+
+function loadRange() {
+  const fallback = { min: 1, max: Math.min(40, ELEMENT_MAX) };
+  try {
+    const raw = localStorage.getItem(RANGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    const min = Number.parseInt(parsed.min, 10);
+    const max = Number.parseInt(parsed.max, 10);
+    if (
+      Number.isInteger(min) &&
+      Number.isInteger(max) &&
+      min >= ELEMENT_MIN &&
+      max <= ELEMENT_MAX &&
+      min <= max
+    ) {
+      return { min, max };
+    }
+  } catch (_err) {
+    /* ignore */
+  }
+  return fallback;
+}
+
+function saveRange(min, max) {
+  try {
+    localStorage.setItem(RANGE_KEY, JSON.stringify({ min, max }));
+  } catch (_err) {
+    /* ignore */
+  }
 }
 
 function createDial(host, { min, max, value }) {
