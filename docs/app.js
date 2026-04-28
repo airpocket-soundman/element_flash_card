@@ -40,8 +40,9 @@ const defaultActions = document.getElementById("default-actions");
 const inputActions = document.getElementById("input-actions");
 const answerInput = document.getElementById("answer-input");
 const inputSubmitBtn = document.getElementById("input-submit");
-const inputNextBtn = document.getElementById("input-next");
 const judgeResult = document.getElementById("judge-result");
+
+let autoAdvanceTimer = null;
 
 const valueNodes = {
   number: document.getElementById("q-number"),
@@ -74,18 +75,34 @@ function setupEvents() {
   windowSizeSelect.addEventListener("change", renderResults);
 
   inputSubmitBtn.addEventListener("click", submitInputAnswer);
-  inputNextBtn.addEventListener("click", nextQuestion);
 
   answerInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (!inputNextBtn.hidden) nextQuestion();
-      else submitInputAnswer();
+      if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = null;
+        nextQuestion();
+      } else {
+        submitInputAnswer();
+      }
+    }
+  });
+
+  judgeResult.addEventListener("click", () => {
+    if (autoAdvanceTimer) {
+      clearTimeout(autoAdvanceTimer);
+      autoAdvanceTimer = null;
+      nextQuestion();
     }
   });
 }
 
 function showScreen(name) {
+  if (name !== "quiz" && autoAdvanceTimer) {
+    clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer = null;
+  }
   Object.keys(screens).forEach((key) => {
     screens[key].classList.toggle("active", key === name);
   });
@@ -144,10 +161,21 @@ function nextQuestion() {
 }
 
 function renderQuestion() {
-  const revealKey = COURSES[currentCourse].reveal;
+  const course = COURSES[currentCourse];
+  const revealKey = course.reveal;
+  const isInput = !!course.input;
   Object.keys(valueNodes).forEach((key) => {
     const node = valueNodes[key];
-    if (answerVisible || key === revealKey) {
+    const row = node.parentElement;
+    const revealed = answerVisible || key === revealKey;
+
+    if (isInput && !revealed) {
+      row.hidden = true;
+      return;
+    }
+    row.hidden = false;
+
+    if (revealed) {
       node.textContent = currentElement[key];
       node.classList.remove("hidden-answer");
     } else {
@@ -184,16 +212,21 @@ function recordResult(isCorrect) {
 }
 
 function resetInputState() {
+  if (autoAdvanceTimer) {
+    clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer = null;
+  }
   answerInput.value = "";
+  answerInput.readOnly = false;
   answerInput.disabled = false;
+  inputSubmitBtn.disabled = false;
   judgeResult.hidden = true;
   judgeResult.classList.remove("correct", "wrong");
-  inputSubmitBtn.hidden = false;
-  inputNextBtn.hidden = true;
   answerInput.focus();
 }
 
 function submitInputAnswer() {
+  if (autoAdvanceTimer) return;
   const raw = answerInput.value.trim();
   if (!raw) return;
   const course = COURSES[currentCourse];
@@ -217,10 +250,14 @@ function submitInputAnswer() {
     ? `正解！  ${correct}`
     : `不正解  あなた: ${raw}  /  正解: ${correct}`;
 
-  answerInput.disabled = true;
-  inputSubmitBtn.hidden = true;
-  inputNextBtn.hidden = false;
-  inputNextBtn.focus();
+  answerInput.readOnly = true;
+  inputSubmitBtn.disabled = true;
+
+  const delay = isCorrect ? 700 : 2200;
+  autoAdvanceTimer = setTimeout(() => {
+    autoAdvanceTimer = null;
+    nextQuestion();
+  }, delay);
 }
 
 function renderResults() {

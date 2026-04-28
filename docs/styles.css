@@ -279,11 +279,10 @@ button:disabled {
   grid-template-columns: 170px 1fr;
   gap: 10px;
   padding: 8px 4px;
-  border-bottom: 1px dashed #e5edf5;
 }
 
-.row:last-child {
-  border-bottom: none;
+.row:has(~ .row:not([hidden])) {
+  border-bottom: 1px dashed #e5edf5;
 }
 
 .label {
@@ -401,8 +400,7 @@ button:disabled {
   font-weight: 700;
 }
 
-#input-submit,
-#input-next {
+#input-submit {
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -414,6 +412,7 @@ button:disabled {
   text-align: center;
   font-weight: 700;
   font-size: 15px;
+  cursor: pointer;
 }
 
 .judge-result.correct {
